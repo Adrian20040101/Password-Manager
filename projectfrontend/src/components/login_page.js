@@ -78,9 +78,6 @@ export default function LoginPage() {
     }
 };
 
-  
-  
-
   return (
     <Container style = {{display: 'flex', justifyContent: 'center', minHeight: '100vh', minWidth: '210vh', alignItems: 'center', backgroundImage:backgroundImage, backgroundSize: 'cover', backgroundPosition: 'center'}}>
     <Paper elevation={3} style={paperStyle}>
