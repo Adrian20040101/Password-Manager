@@ -10,7 +10,6 @@ import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 export default function ResetPassword() {
     const [error, setError] = useState('');
     const [message, setMessage] = useState('');
-    const [failedMessage, setFailedMessage] = useState('');
     const [backgroundImage, setBackgroundImage] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmNewPassword, setConfirmNewPassword] = useState('');
@@ -24,37 +23,40 @@ export default function ResetPassword() {
     const userId = userIdString ? parseInt(userIdString) : null;
 
 
-    const handlePasswordReset = (e) => {
+    const handlePasswordReset = async (e) => {
         e.preventDefault();
 
         if (!newPassword || !confirmNewPassword) {
-            setFailedMessage('Please fill in both password fields.');
+            setError('Please fill in both password fields.');
             return;
         }
 
         if (newPassword !== confirmNewPassword) {
-            setFailedMessage('Passwords do not match.');
+            setError('Passwords do not match.');
             return;
         }
 
-        const formData = new FormData();
-        formData.append('id', userId);
-        formData.append('newPassword', newPassword);
+        try {
+            const formData = new FormData();
+            formData.append('id', userId);
+            formData.append('newPassword', newPassword);
 
-        console.log(token);
-        console.log(userId);
-
-        fetch("http://localhost:8080/user/change", {
-            method: "POST",
-            body: formData
-        })
-        .then((res) => {  
-            if (res.ok) {
-                setMessage("Password has been successfully changed. You may return to the login page.");
-            } else {
-                setFailedMessage("An error occurred. Please try again.");
+            const response = await fetch("http://localhost:8080/user/change", {
+                method: "POST",
+                body: formData
+            })
+            
+            if (response.status === 200) {
+                setMessage('Password changed successfully.');
+            } else if (response.status === 406) {
+                setError('New password does not meet minimum requirements.');
+            } else if (response.status === 500) {
+                setError('Password could not be changed. Please try again.');
             }
-        })
+        } catch (error) {
+            console.error('Error during reset process:', error);
+            setError('An unexpected error occurred.');
+        }
     };
 
     const paperStyle = { padding: '50px 20px', width: 600, margin: '20px auto' };
@@ -127,7 +129,6 @@ export default function ResetPassword() {
                     <Button variant="contained" onClick={handlePasswordReset}>Reset Password</Button>
                 </Box>
                 {error && !message && <p style={{ color: 'red', textAlign: 'center' }}>{error}</p>}
-                {failedMessage && <p style={{ color: 'red', textAlign: 'center' }}>{failedMessage}</p>}
                 {message && <p style={{ color: 'green', textAlign: 'center' }}>{message}</p>}
             </Paper>
         </Container>
