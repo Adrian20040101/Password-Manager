@@ -2,6 +2,8 @@ package passwordmanager.controller;
 
 import jakarta.mail.MessagingException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import passwordmanager.service.PasswordResetService;
 
@@ -14,12 +16,12 @@ public class PasswordResetController {
     PasswordResetService service;
 
     @PostMapping("/passwordReset")
-    public String initiatePasswordReset(@RequestParam String username, @RequestParam String email) {
+    public ResponseEntity<HttpStatus> initiatePasswordReset(@RequestParam String username, @RequestParam String email) {
         try {
             service.initiatePasswordReset(username, email);
-            return "Password reset initiated successfully!";
+            return ResponseEntity.ok(HttpStatus.OK);
         } catch (MessagingException e) {
-            return "Failed to initiate password reset: " + e.getMessage();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 }

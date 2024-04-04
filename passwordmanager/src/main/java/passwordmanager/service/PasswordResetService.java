@@ -3,6 +3,7 @@ package passwordmanager.service;
 import jakarta.mail.MessagingException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import passwordmanager.custom_exceptions.UserNotFoundException;
 import passwordmanager.model.PasswordReset;
 import passwordmanager.model.User;
 import passwordmanager.repository.PasswordResetRepository;
@@ -40,6 +41,8 @@ public class PasswordResetService {
 
             String resetLink = "http://localhost:3000/reset-password?token=" + token + '/' + user.getId();
             emailService.sendPasswordResetEmail(email, resetLink);
+        } else {
+            throw new UserNotFoundException("User not found.");
         }
     }
 

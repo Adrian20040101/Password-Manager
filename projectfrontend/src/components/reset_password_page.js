@@ -6,7 +6,6 @@ import { Container, Paper, Box } from '@mui/material';
 export default function ResetPasswordPage() {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
-  const [failedMessage, setFailedMessage] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [backgroundImage, setBackgroundImage] = React.useState('');
@@ -14,35 +13,38 @@ export default function ResetPasswordPage() {
 // implement a method in the back end to check if a user is existent in the db, and connect it to this part to be able to throw an error
 // if the username doesn't exist in the db
 
-  const sendEmail = (e) => {
+  const sendEmail = async (e) => {
     e.preventDefault();
 
     if (!username) {
-      setFailedMessage('Please enter your username.');
+      setError('Please enter your username.');
       return;
     }
 
     if (!email) {
-      setFailedMessage('Please enter your email.');
+      setError('Please enter your email.');
       return;
     }
 
-    const formData = new FormData();
-    formData.append('username', username);
-    formData.append('email', email);
-    
-    fetch("http://localhost:8080/reset/passwordReset", {
-          method: "POST",
-          body: formData
-    })
-    .then((res) => {  
-      if (res.ok) {
-          setMessage("Password Reset Link sent! Check your email.");
-      } else {
-          setFailedMessage("An error occurred. Email could not be sent.");
-      }
-  })
-
+    try {
+      const formData = new FormData();
+      formData.append('username', username);
+      formData.append('email', email);
+      
+      const response = await fetch("http://localhost:8080/reset/passwordReset", {
+            method: "POST",
+            body: formData
+      })
+      
+      if (response.status === 200) {
+          setMessage('Password Reset Link sent! Check your email and follow the instructions.')
+      } else if (response.status === 500) {
+          setError('Link could not be sent. Please try again.')
+      } 
+    } catch (error) {
+        console.error('Error during reset process:', error);
+        setError('An unexpected error occurred.');
+    }
   };
 
   const paperStyle={padding:'50px 20px', width:600, margin:'20px auto'};
@@ -91,7 +93,7 @@ React.useEffect(() => {
         Send Link
       </Button>
       </Box>
-      {failedMessage && !message && <p style={{ color: 'red', textAlign: 'center' }}>{failedMessage}</p>}
+      {error && !message && <p style={{ color: 'red', textAlign: 'center' }}>{error}</p>}
       {message && <p style={{ color: 'green', textAlign: 'center' }}>{message}</p>}
       </Paper>
     </Container>

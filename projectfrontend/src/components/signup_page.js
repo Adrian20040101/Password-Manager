@@ -46,9 +46,8 @@ export default function SignupPage() {
             if (response.status === 200) {
                 setSignupMessage('Sign Up successful! Return to the login page.')
                 history.push('/'); 
-            } else if (response.status === 400) {
-                const data = await response.json();
-                setError(data.message || 'Password does not meet the minimum requirements.');
+            } else if (response.status === 406) {
+                setError('Password does not meet the minimum requirements.');
             } else {
                 setError('Signup failed.');
             }
