@@ -61,6 +61,7 @@ public class StoredPasswordController {
     @PostMapping("/changePassword")
     public ResponseEntity<?> changePassword(@RequestParam Integer userId, @RequestParam Integer passwordId, @RequestParam String newPassword) {
         try {
+            service.changePassword(userId, passwordId, newPassword);
             return ResponseEntity.ok(HttpStatus.OK);
         } catch (PasswordNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Password not found.");
