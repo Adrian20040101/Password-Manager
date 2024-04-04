@@ -15,16 +15,17 @@ export default function MainPage() {
     const [newPassword, setNewPassword] = useState('');
     const [confirmNewPassword, setConfirmNewPassword] = useState('');
     const [showUpdatePasswordFields, setShowUpdatePasswordFields] = useState(false);
+    const [error, setError] = useState('');
     const [addPassword, setAddPassword] = useState({ website: '', password: '' });
     const [addMessage, setAddMessage] = useState('');
     const [deleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
     const [deleteOutcomeOpen, setDeleteOutcomeOpen] = useState(false);
     const [passwordToDelete, setPasswordToDelete] = useState(null);
-    const [failedAddMessage, setFailedAddMessage] = useState('');
+    const [errorAddMessage, setErrorAddMessage] = useState('');
     const [updateMessage, setUpdateMessage] = useState('');
-    const [failedUpdateMessage, setFailedUpdateMessage] = useState('');
+    const [errorUpdateMessage, setErrorUpdateMessage] = useState('');
     const [deleteMessage, setDeleteMessage] = useState('');
-    const [failedDeleteMessage, setFailedDeleteMessage] = useState('');
+    const [errorDeleteMessage, setErrorDeleteMessage] = useState('');
     const location = useLocation();
     const searchParams = new URLSearchParams(location.search);
     const userIdString = searchParams.get('userId');
@@ -35,19 +36,23 @@ export default function MainPage() {
         fetchPasswords();
     }, [userId]);
 
-    const fetchPasswords = () => {
+    const fetchPasswords = async () => {
         if (!userId) {
             console.error('No userId found in the URL');
             return;
         }
         
-        fetch(`http://localhost:8080/password/retrieveAll?id=${userId}`)
-            .then(response => response.json())
-            .then(data => {
+        try {
+            const response = await fetch(`http://localhost:8080/password/retrieveAll?id=${userId}`);
+            if (response.status === 200) {
+                const data = await response.json();
                 setPasswords(data);
                 setShowPasswords(Array(data.length).fill(false));
-            })
-            .catch(error => console.error('Error fetching passwords:', error));
+            }
+        } catch (error) {
+            console.error('Error during password retrieval:', error);
+            setError('An unexpected error occurred.');
+        }
     };
 
     const togglePasswordVisibility = index => {
@@ -71,21 +76,30 @@ export default function MainPage() {
         setDeleteConfirmationOpen(true);
     };
 
-    const handleDeletionConfirmation = () => {
-        fetch(`http://localhost:8080/password/deletePassword?userId=${userId}&passwordId=${passwordToDelete}`, {
-            method: 'DELETE'
-        })
-        .then((res) => {
-            if (res.ok) {
-                setDeleteMessage('Password deleted successfully. Refresh the page for updated password list');
-            } else {
-                setFailedDeleteMessage('An error occurred. Please try again.');
+    const handleDeletionConfirmation = async () => {
+        try {
+            const response = await fetch(`http://localhost:8080/password/deletePassword?userId=${userId}&passwordId=${passwordToDelete}`, {
+                method: 'DELETE'
+            })
+            if (response.status === 200) {
+                setDeleteMessage('Password deleted successfully.');
+            } else if (response.status === 404) {
+                const data = await response.text();
+                if (data === 'Password not found') {
+                    setErrorDeleteMessage('Password was not found in the database.');
+                } else if (data === 'User not found') {
+                    setErrorDeleteMessage('User was not found in the database.');
+                }
+            } else if (response.status === 500) {
+                setErrorDeleteMessage('Password deletion failed. Please try again.');
             }
-        })
-        .finally(() => {
+        } catch (error) {
+            console.error('Error during deletion process:', error);
+            setError('An unexpected error occurred.');
+        } finally {
             setDeleteConfirmationOpen(false);
             setDeleteOutcomeOpen(true);
-        })
+        }
     };
 
     const handleCancelDelete = () => {
@@ -96,48 +110,49 @@ export default function MainPage() {
         setDeleteOutcomeOpen(false);
     };
 
-    const handleDeleteConfirmationClose = () => {
-        setDeleteConfirmationOpen(false);
-        setDeleteOutcomeOpen(true);
-    };
 
-    const handleSubmitAddPassword = () => {
+    // TODO - handle double submition problem (i.e. to not be able to add a password for the same website after creating a password entry
+    // by pressing the submit button multiple times)
+    const handleSubmitAddPassword = async () => {
         if (!addPassword.website || !addPassword.password) {
-            setFailedAddMessage("Website and Password are required.");
+            setErrorAddMessage("Website and Password are required.");
             return;
         }
 
-        const formData = new FormData();
-        formData.append('id', userId);
-        formData.append('website', addPassword.website)
-        formData.append('password', addPassword.password);
+        try {
+            const formData = new FormData();
+            formData.append('id', userId);
+            formData.append('website', addPassword.website)
+            formData.append('password', addPassword.password);
 
-        console.log(username);
-        console.log(userId);
-
-        fetch("http://localhost:8080/password/savePassword", {
-            method: "POST",
-            body: formData
-        })
-        .then((res) => {
-            if (res.ok) {
-                setAddMessage("Password was successfully added.")
-            } else {
-                setFailedAddMessage("An error occurred. Please try again.")
+            const response = await fetch("http://localhost:8080/password/savePassword", {
+                method: "POST",
+                body: formData
+            })
+            
+            if (response.status === 200) {
+                setAddMessage('Password added successfully.');
+            } else if (response.status === 404) {
+                setErrorAddMessage('User was not found in the database.');
+            } else if (response.status === 500) {
+                setErrorAddMessage('Password addition failed. Please try again.')
             }
-        })
+        } catch (error) {
+            console.error('Error during addition process:', error);
+            setError('An unexpected error occurred.');
+        } 
     };
 
 
     const changeWebsitePassword = (id) => {
         if (!newPassword) {
-            setFailedUpdateMessage('New password required.');
+            setErrorUpdateMessage('New password required.');
             return;
         } else if (!confirmNewPassword) {
-            setFailedUpdateMessage('Password Confirmation required.');
+            setErrorUpdateMessage('Password Confirmation required.');
             return;
         } else if (newPassword !== confirmNewPassword) {
-            setFailedUpdateMessage('Passwords do not match.');
+            setErrorUpdateMessage('Passwords do not match.');
             return;
         }
 
@@ -158,7 +173,7 @@ export default function MainPage() {
             if (res.ok) {
                 setUpdateMessage("Password was successfully changed.")
             } else {
-                setFailedUpdateMessage("An error occurred. Please try again.")
+                setErrorUpdateMessage("An error occurred. Please try again.")
             }
         })
     };
@@ -211,7 +226,7 @@ export default function MainPage() {
                                 style={{ marginBottom: '20px' }}
                             />
                             <Button variant="contained" onClick={() => changeWebsitePassword(password.id)}>Submit</Button>
-                            {failedUpdateMessage && !updateMessage && <p style={{ color: 'red', textAlign: 'center' }}>{failedUpdateMessage}</p>}
+                            {errorUpdateMessage && !updateMessage && <p style={{ color: 'red', textAlign: 'center' }}>{errorUpdateMessage}</p>}
                             {updateMessage && <p style={{ color: 'green', textAlign: 'center' }}>{updateMessage}</p>}
                         </div>
                     )}
@@ -239,7 +254,7 @@ export default function MainPage() {
                         style={{ marginBottom: '20px' }}
                     />
                     <Button variant="contained" onClick={handleSubmitAddPassword}>Submit</Button>
-                    {failedAddMessage && !addMessage && <p style={{ color: 'red', textAlign: 'center' }}>{failedAddMessage}</p>}
+                    {errorAddMessage && !addMessage && <p style={{ color: 'red', textAlign: 'center' }}>{errorAddMessage}</p>}
                     {addMessage && <p style={{ color: 'green', textAlign: 'center' }}>{addMessage}</p>}   
                 </Paper>
             )}
@@ -279,7 +294,7 @@ export default function MainPage() {
                 <DialogContent>
                     <DialogContentText id="delete-outcome-dialog-description">
                         {deleteMessage && <p>{deleteMessage}</p>}
-                        {failedDeleteMessage && <p>{failedDeleteMessage}</p>}
+                        {errorDeleteMessage && <p>{errorDeleteMessage}</p>}
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
