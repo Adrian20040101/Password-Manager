@@ -48,6 +48,8 @@ export default function MainPage() {
                 const data = await response.json();
                 setPasswords(data);
                 setShowPasswords(Array(data.length).fill(false));
+            } else if (response.status === 404) {
+                setError('User was not found in the database.');
             }
         } catch (error) {
             console.error('Error during password retrieval:', error);
@@ -144,7 +146,7 @@ export default function MainPage() {
     };
 
 
-    const changeWebsitePassword = (id) => {
+    const changeWebsitePassword = async (id) => {
         if (!newPassword) {
             setErrorUpdateMessage('New password required.');
             return;
@@ -161,21 +163,28 @@ export default function MainPage() {
         formData.append('passwordId', id);
         formData.append('newPassword', newPassword);
 
-        console.log(userId);
-        console.log(id);
-        console.log(newPassword);
-
-        fetch('http://localhost:8080/password/changePassword', {
-            method: "POST",
-            body: formData
-        })
-        .then((res) => {
-            if (res.ok) {
-                setUpdateMessage("Password was successfully changed.")
-            } else {
-                setErrorUpdateMessage("An error occurred. Please try again.")
+        try {
+            const response = await fetch('http://localhost:8080/password/changePassword', {
+                method: "POST",
+                body: formData
+            })
+            
+            if (response.status === 200) {
+                setUpdateMessage('Password changed successfully.');
+            } else if (response.status === 404) {
+                const data = await response.text();
+                if (data === 'Password not found.') {
+                    setErrorUpdateMessage('Password was not found in the database.');
+                } else if (data === 'User not found.') {
+                    setErrorUpdateMessage('User was not found in the database.');
+                }
+            } else if (response.status === 500) {
+                setErrorUpdateMessage('Password change failed. Please try again.');
             }
-        })
+        } catch {
+            console.error('Error during password change process:', error);
+            setError('An unexpected error occurred.');
+        }
     };
 
     return (
