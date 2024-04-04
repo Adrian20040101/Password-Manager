@@ -6,38 +6,59 @@ import { useParams, useLocation } from "react-router-dom";
 import { useUserId } from "./user_id_context";
 
 export default function ChangePassword() {
+    const location = useLocation();
     const [message, setMessage] = useState('');
-    const [failedMessage, setFailedMessage] = useState('');
+    const [error, setError] = useState('');
     const [backgroundImage, setBackgroundImage] = useState('');
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmNewPassword, setConfirmNewPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    const { userId } = useUserId();
+    const { userId, setUserId } = useUserId();
 
-    const handlePasswordChange = () => {
+    useEffect(() => {
+      const params = new URLSearchParams(location.search);
+      const userIdFromUrl = params.get('userId');
+      if (userIdFromUrl) {
+        setUserId(userIdFromUrl);
+      }
+    }, [location.search, setUserId]);
+
+    const handlePasswordChange = async () => {
         if (!currentPassword) {
-            setFailedMessage('Current password is required.');
+            setError('Current password is required.');
             return;
         } else if (!newPassword) {
-            setFailedMessage('New password is required.');
+            setError('New password is required.');
             return;
         } else if (!confirmNewPassword) {
-            setFailedMessage('Password confirmation is required.');
+            setError('Password confirmation is required.');
+            return;
+        } else if (newPassword !== confirmNewPassword) {
+            setError('Passwords do not match.');
             return;
         }
 
-        fetch(`http://localhost:8080/user/change?id=${userId}&newPassword=${newPassword}`, {
-            method: "POST"
-        })
-        .then((res) => {
-            if (res.ok) {
+        try {
+            const response = await fetch(`http://localhost:8080/user/change?id=${userId}&newPassword=${newPassword}`, {
+                method: "POST"
+            })
+
+            if (response.status === 200) {
                 setMessage("Password changed successfully. Use this password the next time you log in.");
-            } else {
-                setFailedMessage("An error occurred. Please try again.");
+            } else if (response.status === 406) {
+                setError("Password does not meet the minimum requirements.");
+            } else if (response.status === 404) {
+                setError("User was not found in the database.");
+            } else if (response.status === 500) {
+                setError('Password change failed. Please try again.');
             }
-        });
+        } catch (error) {
+            console.error('Error during password change process:', error);
+            setError("An unexpected error occurred. Please try again later.");
+        }
+
     };
 
     const togglePasswordVisibility = () => {
@@ -117,7 +138,7 @@ export default function ChangePassword() {
                         }}
                     />
                     <Button variant="contained" onClick={handlePasswordChange}>Change Password</Button>
-                    {failedMessage && <p style={{ color: "red", textAlign: "center" }}>{failedMessage}</p>}
+                    {error && !message && <p style={{ color: "red", textAlign: "center" }}>{error}</p>}
                     {message && <p style={{ color: "green", textAlign: "center" }}>{message}</p>}
                 </Box>
             </Paper>

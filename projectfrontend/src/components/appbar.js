@@ -8,7 +8,8 @@ function MyAppBar() {
   const history = useHistory();
   const location = useLocation();
   const [message, setMessage] = useState('');
-  const [failedMessage, setFailedMessage] = useState('');
+  const [error, setError] = useState('');
+  const [errorDelete, setErrorDelete] = useState('');
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [openConfirmation, setOpenConfirmation] = useState(false);
   const { userId, setUserId } = useUserId();
@@ -25,37 +26,48 @@ function MyAppBar() {
     setAnchorEl(event.currentTarget);
   };
 
-  const handleLogoutClick = (route) => {
+  const handleLogoutClick = async (route) => {
     if (route === '/logout') {
-      fetch("http://localhost:8080/user/logout", {
-        method: 'POST'
-      })
-      .then((res) => {
-        if (res.ok) {
-          history.push("/");
-        } else {
-          setFailedMessage("Logout failed. Please try again.");
+      try {
+        const response = await fetch("http://localhost:8080/user/logout", {
+          method: 'POST'
+        })
+        if (response.status === 200) {
+            history.push("/");
+        } else if (response.status == 400) {
+            setError('No user is logged in.');
+        } else if (response.status === 500) {
+            setError("Logout failed. Please try again.");
         }
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error('Error logging out:', error);
-        setFailedMessage("An error occurred during logout. Please try again later.");
-      });
+        setError("An error occurred during logout. Please try again later.");
+      }
     } else {
       history.push(route);
     }
     setAnchorEl(null);
   };
 
-  const handleDeleteAccount = () => {
-    fetch(`http://localhost:8080/user/delete?id=${userId}`, {
-      method: 'DELETE'
-    })
-    .then(() => {
-      handleLogoutClick('/logout');
-      history.push("/");
-      handleCloseConfirmation();
-    });
+  const handleDeleteAccount = async () => {
+    try {
+      const response = await fetch(`http://localhost:8080/user/delete?id=${userId}`, {
+        method: 'DELETE'
+      })
+      
+      if (response.status === 200) {
+          handleLogoutClick('/logout');
+          history.push("/");
+          handleCloseConfirmation();
+      } else if (response.status === 404) {
+          setErrorDelete('User was not found in the database');
+      } else if (response.status === 500) {
+          setErrorDelete('Account deletion failed. Please try again.');
+      }
+    } catch (error) {
+        console.error('Error logging out:', error);
+        setErrorDelete("An error occurred during logout. Please try again later.");
+    }
   }
 
   const handleDeleteConfirmation = () => {
