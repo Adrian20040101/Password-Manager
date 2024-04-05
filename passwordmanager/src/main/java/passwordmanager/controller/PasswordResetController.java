@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import passwordmanager.custom_exceptions.UserNotFoundException;
 import passwordmanager.service.PasswordResetService;
 
 @RestController
@@ -20,6 +21,8 @@ public class PasswordResetController {
         try {
             service.initiatePasswordReset(username, email);
             return ResponseEntity.ok(HttpStatus.OK);
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.notFound().build();
         } catch (MessagingException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }

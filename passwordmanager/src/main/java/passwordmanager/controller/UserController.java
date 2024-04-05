@@ -62,7 +62,7 @@ public class UserController {
     @GetMapping("/retrieve")
     public ResponseEntity<?> retrievePassword(@RequestParam Integer id) {
         try {
-            return ResponseEntity.ok(service.retrievePassword(id));
+            return ResponseEntity.ok(service.retrieveUserPassword(id));
         } catch (UserNotFoundException e) {
             return ResponseEntity.notFound().build();
         } catch (Exception e) {

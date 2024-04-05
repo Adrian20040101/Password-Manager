@@ -19,9 +19,6 @@ public class User {
     @Column
     private String password;
 
-    @Column
-    private String salt;
-
     @OneToMany(mappedBy = "user", fetch = FetchType.EAGER)
     private List<StoredPassword> storedPasswords;
 

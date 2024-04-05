@@ -1,6 +1,6 @@
 package passwordmanager.service;
 
-import org.mindrot.jbcrypt.BCrypt;
+import org.jasypt.util.text.BasicTextEncryptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -10,6 +10,10 @@ import passwordmanager.model.User;
 import passwordmanager.model.UserSession;
 import passwordmanager.repository.UserRepository;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
@@ -24,14 +28,28 @@ public class UserService {
     @Autowired
     private StoredPasswordService passwordService;
 
+    private final BasicTextEncryptor encryptor;
+
+    public UserService () {
+        String encryptionPassword = readKey();
+        encryptor = new BasicTextEncryptor();
+        encryptor.setPassword(encryptionPassword);
+    }
+
+    private String readKey (){
+        try {
+            return Files.readString(Path.of("passwordmanager/encryption_key.txt")).trim();
+        } catch (IOException e) {
+            return "Error fetching key.";
+        }
+    }
+
     public void saveNewUser (User user) {
         if (!isComplex(user.getPassword())) {
             throw new NotComplexEnoughException("Password does not meet required criteria.");
         }
-        String salt = BCrypt.gensalt();
-        String hashedPassword = BCrypt.hashpw(user.getPassword(), salt);
-        user.setPassword(hashedPassword);
-        user.setSalt(salt);
+        String encryptedPassword = encryptor.encrypt(user.getPassword());
+        user.setPassword(encryptedPassword);
         repository.save(user);
     }
 
@@ -51,34 +69,22 @@ public class UserService {
         if (!isComplex(newPassword)) {
             throw new NotComplexEnoughException("Password does not meet required criteria.");
         }
-        String salt = BCrypt.gensalt();
-        String hashedPassword = BCrypt.hashpw(newPassword, salt);
+        String encryptedPassword = encryptor.encrypt(newPassword);
         Optional<User> foundUser = repository.findById(id);
         if (foundUser.isPresent()) {
             User user = foundUser.get();
-            user.setPassword(hashedPassword);
-            user.setSalt(salt);
+            user.setPassword(encryptedPassword);
             repository.save(user);
         } else {
             throw new UserNotFoundException("User with ID " + id + " not found.");
         }
     }
 
-    public String retrievePassword (Integer id) {
+    public String retrieveUserPassword (Integer id) {
         Optional<User> foundUser = repository.findById(id);
         if (foundUser.isPresent()) {
             User user = foundUser.get();
-            return user.getPassword();
-        } else {
-            throw new UserNotFoundException("User with ID " + id + " not found.");
-        }
-    }
-
-    public String retrieveSalt(Integer id) {
-        Optional<User> foundUser = repository.findById(id);
-        if (foundUser.isPresent()) {
-            User user = foundUser.get();
-            return user.getSalt();
+            return encryptor.decrypt(user.getPassword());
         } else {
             throw new UserNotFoundException("User with ID " + id + " not found.");
         }
@@ -89,7 +95,18 @@ public class UserService {
         Optional<User> foundUser = repository.findById(id);
         if (foundUser.isPresent()) {
             User user = foundUser.get();
-            return repository.findUserPasswords(id);
+            List<StoredPassword> encryptedPasswords = repository.findUserPasswords(id);
+            List<StoredPassword> decryptedPasswords = new ArrayList<>();
+            for (var encryptedPassword : encryptedPasswords) {
+                StoredPassword decryptedPassword = new StoredPassword();
+                decryptedPassword.setId(encryptedPassword.getId());
+                decryptedPassword.setWebsite(encryptedPassword.getWebsite());
+                decryptedPassword.setUser(encryptedPassword.getUser());
+                String decryptedPasswordValue = encryptor.decrypt(encryptedPassword.getStoredPassword());
+                decryptedPassword.setStoredPassword(decryptedPasswordValue);
+                decryptedPasswords.add(decryptedPassword);
+            }
+            return decryptedPasswords;
         } else {
             throw new UserNotFoundException("User with ID " + id + " not found.");
         }
@@ -103,10 +120,8 @@ public class UserService {
         Optional<User> foundUser = repository.findByUsername(username);
         if (foundUser.isPresent()) {
             User user = foundUser.get();
-            String storedPassword = retrievePassword(user.getId());
-            String storedSalt = retrieveSalt(user.getId());
-            String hashedPassword = BCrypt.hashpw(password, storedSalt);
-            if (hashedPassword.equals(storedPassword)) {
+            String decryptedPassword = encryptor.decrypt(user.getPassword());
+            if (decryptedPassword.equals(password)) {
                 UserSession.login(user);
                 return user.getId();
             } else {
