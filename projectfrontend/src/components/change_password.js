@@ -9,10 +9,12 @@ export default function ChangePassword() {
     const location = useLocation();
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
+    const [currentPasswordError, setCurrentPasswordError] = useState('');
     const [backgroundImage, setBackgroundImage] = useState('');
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmNewPassword, setConfirmNewPassword] = useState('');
+    const [showCurrentPassword, setShowCurrentPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const { userId, setUserId } = useUserId();
@@ -25,7 +27,26 @@ export default function ChangePassword() {
       }
     }, [location.search, setUserId]);
 
+    const fetchCurrentPassword = async () => {
+        try {
+            const response = await fetch(`http://localhost:8080/user/retrieve?id=${userId}`);
+            if (response.status === 200) {
+                const data = await response.text();
+                return data;
+            } else if (response.status === 404) {
+                setCurrentPasswordError('User was not found in the database.');
+            } else if (response.status === 500) {
+                setCurrentPasswordError('Password fetching failed. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error during password fetching:', error);
+            setError('An unexpected error occurred.');
+        }
+    };
+
     const handlePasswordChange = async () => {
+        const currentUserPassword = await fetchCurrentPassword();
+
         if (!currentPassword) {
             setError('Current password is required.');
             return;
@@ -34,6 +55,9 @@ export default function ChangePassword() {
             return;
         } else if (!confirmNewPassword) {
             setError('Password confirmation is required.');
+            return;
+        } else if (currentPassword !== currentUserPassword) {
+            setError('Current password is incorrect.');
             return;
         } else if (newPassword !== confirmNewPassword) {
             setError('Passwords do not match.');
@@ -59,6 +83,10 @@ export default function ChangePassword() {
             setError("An unexpected error occurred. Please try again later.");
         }
 
+    };
+
+    const toggleCurrentPasswordVisibility = () => {
+        setShowCurrentPassword((prevShowCurrentPassword) => !prevShowCurrentPassword);
     };
 
     const togglePasswordVisibility = () => {
@@ -97,9 +125,18 @@ export default function ChangePassword() {
                         label="Current Password"
                         variant="outlined"
                         fullWidth
-                        type="password"
+                        type={showCurrentPassword ? "text" : "password"}
                         value={currentPassword}
                         onChange={(e) => setCurrentPassword(e.target.value)}
+                        InputProps={{
+                            endAdornment: (
+                                <InputAdornment position="end">
+                                    <IconButton onClick={toggleCurrentPasswordVisibility} edge="end">
+                                        {showCurrentPassword ? <VisibilityIcon /> : <VisibilityOffIcon />}
+                                    </IconButton>
+                                </InputAdornment>
+                            ),
+                        }}
                     />
                     <TextField
                         id="new-password"
@@ -127,6 +164,7 @@ export default function ChangePassword() {
                         type={showConfirmPassword ? "text" : "password"}
                         value={confirmNewPassword}
                         onChange={(e) => setConfirmNewPassword(e.target.value)}
+                        disabled={!newPassword}
                         InputProps={{
                             endAdornment: (
                                 <InputAdornment position="end">

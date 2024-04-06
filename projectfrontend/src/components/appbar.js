@@ -123,8 +123,8 @@ function MyAppBar() {
           onClose={handleClose}
         >
           <MenuItem onClick={() => handleLogoutClick('/logout')}>Log out</MenuItem>
-          <Link to='/change-password' style={{ textDecoration: 'none' }}>
-            <MenuItem onClick={handleClose}>Change Password</MenuItem>
+          <Link to={`/change-password?userId=${userId}`} style={{ textDecoration: 'none' }}>
+            <MenuItem onClick={handleClose} sx={{ color: 'black' }} >Change Password</MenuItem>
           </Link>
           <MenuItem onClick={handleDeleteConfirmation} sx={{color: 'red' }}>Delete Account</MenuItem>
         </Menu>

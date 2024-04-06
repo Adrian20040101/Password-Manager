@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Container, Paper, IconButton, Button, TextField, Icon, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@mui/material';
+import { Container, Paper, IconButton, Button, TextField, Icon, InputAdornment, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import ChangeCircleIcon from '@mui/icons-material/ChangeCircle';
@@ -12,9 +12,12 @@ export default function MainPage() {
     const [passwords, setPasswords] = useState([]);
     const [showPasswords, setShowPasswords] = useState([]);
     const [showAddPasswordFields, setShowAddPasswordFields] = useState(false);
+    const [showAddPassword, setShowAddPassword] = useState(false);
     const [newPassword, setNewPassword] = useState('');
     const [confirmNewPassword, setConfirmNewPassword] = useState('');
     const [showUpdatePasswordFields, setShowUpdatePasswordFields] = useState(false);
+    const [showUpdatePassword, setShowUpdatePassword] = useState(false);
+    const [showConfirmUpdatePassword, setShowConfirmUpdatePassword] = useState(false);
     const [error, setError] = useState('');
     const [addPassword, setAddPassword] = useState({ website: '', password: '' });
     const [addMessage, setAddMessage] = useState('');
@@ -69,8 +72,20 @@ export default function MainPage() {
         setShowAddPasswordFields(prevShowNewPasswordFields => !prevShowNewPasswordFields);
     };
 
+    const toggleAddPasswordVisibility = () => {
+        setShowAddPassword((prevShowAddPassword) => !prevShowAddPassword);
+    };
+
     const toggleUpdatePasswordFields = (passwordId) => {
         setShowUpdatePasswordFields(prevState => ({...prevState, [passwordId]: !prevState[passwordId]}));
+    };
+
+    const toggleUpdatePasswordVisibility = () => {
+        setShowUpdatePassword((prevShowUpdatePassword) => !prevShowUpdatePassword);
+    };
+
+    const toggleConfirmUpdatePasswordVisibility = () => {
+        setShowConfirmUpdatePassword((prevShowConfirmUpdatePassword) => !prevShowConfirmUpdatePassword);
     };
 
     const openDeleteConfirmation = (passwordId) => {
@@ -221,18 +236,39 @@ export default function MainPage() {
                                 label="New Password"
                                 variant="outlined"
                                 fullWidth
+                                type={showUpdatePassword ? 'text' : 'password'}
                                 value={newPassword}
                                 onChange={(e) => setNewPassword(e.target.value)}
                                 style={{ marginBottom: '20px' }}
+                                InputProps={{
+                                    endAdornment: (
+                                        <InputAdornment position="end">
+                                            <IconButton onClick={toggleUpdatePasswordVisibility} edge="end">
+                                                {showUpdatePassword ? <VisibilityIcon /> : <VisibilityOffIcon />}
+                                            </IconButton>
+                                        </InputAdornment>
+                                        ),
+                                }}
                             />
                             <TextField
                                 name="confirm-new-password"
                                 label="Confirm New Password"
                                 variant="outlined"
                                 fullWidth
+                                type={showConfirmUpdatePassword ? 'text' : 'password'}
                                 value={confirmNewPassword}
                                 onChange={(e) => setConfirmNewPassword(e.target.value)}
                                 style={{ marginBottom: '20px' }}
+                                disabled={!newPassword}
+                                InputProps={{
+                                    endAdornment: (
+                                        <InputAdornment position="end">
+                                            <IconButton onClick={toggleConfirmUpdatePasswordVisibility} edge="end">
+                                                {showConfirmUpdatePassword ? <VisibilityIcon /> : <VisibilityOffIcon />}
+                                            </IconButton>
+                                        </InputAdornment>
+                                        ),
+                                }}
                             />
                             <Button variant="contained" onClick={() => changeWebsitePassword(password.id)}>Submit</Button>
                             {errorUpdateMessage && !updateMessage && <p style={{ color: 'red', textAlign: 'center' }}>{errorUpdateMessage}</p>}
@@ -258,9 +294,19 @@ export default function MainPage() {
                         label="Password"
                         variant="outlined"
                         fullWidth
+                        type={showAddPassword ? 'text' : 'password'}
                         value={addPassword.password}
                         onChange={(e) => setAddPassword(prevState => ({ ...prevState, password: e.target.value }))}
                         style={{ marginBottom: '20px' }}
+                        InputProps={{
+                            endAdornment: (
+                                <InputAdornment position="end">
+                                    <IconButton onClick={toggleAddPasswordVisibility} edge="end">
+                                        {showAddPassword ? <VisibilityIcon /> : <VisibilityOffIcon />}
+                                    </IconButton>
+                                </InputAdornment>
+                                ),
+                        }}
                     />
                     <Button variant="contained" onClick={handleSubmitAddPassword}>Submit</Button>
                     {errorAddMessage && !addMessage && <p style={{ color: 'red', textAlign: 'center' }}>{errorAddMessage}</p>}

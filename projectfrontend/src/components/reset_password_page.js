@@ -38,6 +38,8 @@ export default function ResetPasswordPage() {
       
       if (response.status === 200) {
           setMessage('Password Reset Link sent! Check your email and follow the instructions.')
+      } else if (response.status === 404) {
+        setError('User was not found in the database.');
       } else if (response.status === 500) {
           setError('Link could not be sent. Please try again.')
       } 
