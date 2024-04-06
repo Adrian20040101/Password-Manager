@@ -3,6 +3,7 @@ package passwordmanager.service;
 import jakarta.mail.MessagingException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import passwordmanager.custom_exceptions.PasswordNotFoundException;
 import passwordmanager.custom_exceptions.UserNotFoundException;
 import passwordmanager.model.PasswordReset;
 import passwordmanager.model.User;
@@ -43,6 +44,25 @@ public class PasswordResetService {
             emailService.sendPasswordResetEmail(email, resetLink);
         } else {
             throw new UserNotFoundException("User not found.");
+        }
+    }
+
+    public void checkForValidity (Integer resetId) {
+        Optional<PasswordReset> foundResetEntry = passwordResetRepository.findById(resetId);
+        if (foundResetEntry.isPresent()) {
+            PasswordReset reset = foundResetEntry.get();
+            if (reset.getStatus().equals(PasswordReset.Status.PENDING)) {
+                LocalDateTime expirationTime = reset.getExpirationTime();
+                LocalDateTime currentTime = LocalDateTime.now();
+                if (currentTime.isAfter(expirationTime)) {
+                    reset.setStatus(PasswordReset.Status.EXPIRED);
+                    passwordResetRepository.save(reset);
+                }
+            } else {
+                throw new IllegalStateException("Session has already been completed or has expired.");
+            }
+        } else {
+            throw new PasswordNotFoundException("Password reset entry with ID " + resetId + " was not found.");
         }
     }
 

@@ -33,7 +33,7 @@ public class PasswordReset {
 
     public enum Status {
         PENDING,
-        USED,
+        SOLVED,
         EXPIRED
     }
 

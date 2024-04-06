@@ -5,9 +5,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import passwordmanager.custom_exceptions.*;
+import passwordmanager.model.PasswordReset;
 import passwordmanager.model.StoredPassword;
 import passwordmanager.model.User;
 import passwordmanager.model.UserSession;
+import passwordmanager.repository.PasswordResetRepository;
 import passwordmanager.repository.UserRepository;
 
 import java.io.IOException;
@@ -27,6 +29,9 @@ public class UserService {
 
     @Autowired
     private StoredPasswordService passwordService;
+
+    @Autowired
+    private PasswordResetRepository passwordResetRepository;
 
     private final BasicTextEncryptor encryptor;
 
@@ -75,6 +80,12 @@ public class UserService {
             User user = foundUser.get();
             user.setPassword(encryptedPassword);
             repository.save(user);
+            Optional<PasswordReset> foundResetRequest = passwordResetRepository.findByUserIdAndStatus(user.getId(), PasswordReset.Status.PENDING);
+            if (foundResetRequest.isPresent()) {
+                PasswordReset resetRequest = foundResetRequest.get();
+                resetRequest.setStatus(PasswordReset.Status.SOLVED);
+                passwordResetRepository.save(resetRequest);
+            }
         } else {
             throw new UserNotFoundException("User with ID " + id + " not found.");
         }
