@@ -91,6 +91,14 @@ export default function SignupPage() {
       noValidate
       autoComplete="off"
         >
+
+      <h2 style={{textAlign : 'left', fontSize : 'smaller', fontWeight : 'normal'}}>Password Requirements:</h2>
+      <ul style={{textAlign : 'left', fontSize : 'smaller', fontWeight : 'normal', paddingLeft: '16px' }}>
+        <li>At least 8 characters long</li>
+        <li>Must contain at least one digit</li>
+        <li>Must contain at least one capital letter</li>
+        <li>Must contain at least one special character from the following: *&^!?/.' </li>
+      </ul>
       <TextField id="standard-basic" label="Username" variant="outlined" fullWidth
       value={username}
       onChange={(e) => setUsername(e.target.value)}

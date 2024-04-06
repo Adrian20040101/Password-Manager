@@ -30,6 +30,11 @@ public class PasswordResetService {
         Optional<User> foundUser = userRepository.findByUsername(username);
         if (foundUser.isPresent()) {
             User user = foundUser.get();
+            Optional<PasswordReset> existingResetRequest = passwordResetRepository.findByUserIdAndStatus(user.getId(), PasswordReset.Status.PENDING);
+            if (existingResetRequest.isPresent()) {
+                throw new IllegalStateException("User already has a pending password reset request.");
+            }
+
             String token = generateToken();
             PasswordReset reset = new PasswordReset();
             reset.setUser(user);

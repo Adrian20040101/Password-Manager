@@ -34,6 +34,8 @@ public class PasswordResetController {
         try {
             service.initiatePasswordReset(username, email);
             return ResponseEntity.ok(HttpStatus.OK);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().build();
         } catch (UserNotFoundException e) {
             return ResponseEntity.notFound().build();
         } catch (MessagingException e) {

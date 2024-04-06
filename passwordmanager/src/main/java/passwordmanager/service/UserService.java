@@ -156,9 +156,9 @@ public class UserService {
     // at least one digit
     // at least one capital letter
     // at least one special character
-    // at least 8 characters, at most 16 characters
+    // at least 8 characters
     public boolean isComplex (String password) {
-        if (password.length() < 8 || password.length() > 16)
+        if (password.length() < 8)
             return false;
         return Pattern.compile("^(?=.*[0-9])(?=.*[A-Z])(?=.*[*&^!?/.']).+$").matcher(password).find();
     }
