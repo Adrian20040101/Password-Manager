@@ -99,7 +99,7 @@ export default function ResetPassword() {
                         <li>Must contain at least one digit</li>
                         <li>Must contain at least one capital letter</li>
                         <li>Must contain at least one special character from the following: *&^!?/.' </li>
-                    </ul>
+                    </ul> 
 
                     <TextField id="standard-basic" label="Password" variant="outlined" fullWidth
                     value={newPassword}
