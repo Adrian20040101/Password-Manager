@@ -10,7 +10,9 @@ function MyAppBar() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [errorDelete, setErrorDelete] = useState('');
-  const [anchorEl, setAnchorEl] = React.useState(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [anchorEl, setAnchorEl] = React.useState(null); 
   const [openConfirmation, setOpenConfirmation] = useState(false);
   const { userId, setUserId } = useUserId();
 
@@ -24,6 +26,14 @@ function MyAppBar() {
 
   const handleMenuClick = (event) => {
     setAnchorEl(event.currentTarget);
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword((prevShowPassword) => !prevShowPassword);
+  };
+
+const toggleConfirmPasswordVisibility = () => {
+    setShowConfirmPassword((prevConfirmShowPassword) => !prevConfirmShowPassword);
   };
 
   const handleLogoutClick = async (route) => {
