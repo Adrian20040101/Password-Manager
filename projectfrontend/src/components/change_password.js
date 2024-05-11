@@ -119,12 +119,11 @@ export default function ChangePassword() {
                     }}
                     noValidate
                     autoComplete="off"
-                >
+                > 
 
                 <h2 style={{textAlign : 'left', fontSize : 'smaller', fontWeight : 'normal'}}>Password Requirements:</h2>
                 <ul style={{textAlign : 'left', fontSize : 'smaller', fontWeight : 'normal', paddingLeft: '16px' }}>
                     <li>At least 8 characters long</li>
-                    <li>At most 16 characters long</li>
                     <li>Must contain at least one digit</li>
                     <li>Must contain at least one capital letter</li>
                     <li>Must contain at least one special character from the following: *&^!?/.' </li>

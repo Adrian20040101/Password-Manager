@@ -44,8 +44,10 @@ export default function SignupPage() {
                 body: JSON.stringify({ username, password }),
             });
             if (response.status === 200) {
-                setSignupMessage('Sign Up successful! Return to the login page.')
+                setSignupMessage('Sign Up successful! Return to the login page.');
                 history.push('/'); 
+            } else if (response.status === 400) {
+                setError('A user with that username already exists. Please choose a new one.');
             } else if (response.status === 406) {
                 setError('Password does not meet the minimum requirements.');
             } else {

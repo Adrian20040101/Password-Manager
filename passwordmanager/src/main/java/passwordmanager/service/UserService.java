@@ -1,10 +1,10 @@
 package passwordmanager.service;
 
-import org.jasypt.util.text.BasicTextEncryptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import passwordmanager.custom_exceptions.*;
+import passwordmanager.key_retrieval.KeyRetrieval;
 import passwordmanager.model.PasswordReset;
 import passwordmanager.model.StoredPassword;
 import passwordmanager.model.User;
@@ -12,9 +12,6 @@ import passwordmanager.model.UserSession;
 import passwordmanager.repository.PasswordResetRepository;
 import passwordmanager.repository.UserRepository;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -33,27 +30,21 @@ public class UserService {
     @Autowired
     private PasswordResetRepository passwordResetRepository;
 
-    private final BasicTextEncryptor encryptor;
+    private final KeyRetrieval keyRetrievalService;
 
-    public UserService () {
-        String encryptionPassword = readKey();
-        encryptor = new BasicTextEncryptor();
-        encryptor.setPassword(encryptionPassword);
-    }
-
-    private String readKey (){
-        try {
-            return Files.readString(Path.of("passwordmanager/encryption_key.txt")).trim();
-        } catch (IOException e) {
-            return "Error fetching key.";
-        }
+    public UserService(KeyRetrieval keyRetrievalService) {
+        this.keyRetrievalService = keyRetrievalService;
     }
 
     public void saveNewUser (User user) {
+        Optional<User> existingUser = repository.findByUsername(user.getUsername());
+        if (existingUser.isPresent()) {
+            throw new IllegalStateException("This username is already taken. Choose a new one.");
+        }
         if (!isComplex(user.getPassword())) {
             throw new NotComplexEnoughException("Password does not meet required criteria.");
         }
-        String encryptedPassword = encryptor.encrypt(user.getPassword());
+        String encryptedPassword = keyRetrievalService.encryptPassword(user.getPassword());
         user.setPassword(encryptedPassword);
         repository.save(user);
     }
@@ -74,7 +65,7 @@ public class UserService {
         if (!isComplex(newPassword)) {
             throw new NotComplexEnoughException("Password does not meet required criteria.");
         }
-        String encryptedPassword = encryptor.encrypt(newPassword);
+        String encryptedPassword = keyRetrievalService.encryptPassword(newPassword);
         Optional<User> foundUser = repository.findById(id);
         if (foundUser.isPresent()) {
             User user = foundUser.get();
@@ -95,7 +86,7 @@ public class UserService {
         Optional<User> foundUser = repository.findById(id);
         if (foundUser.isPresent()) {
             User user = foundUser.get();
-            return encryptor.decrypt(user.getPassword());
+            return keyRetrievalService.decryptPassword(user.getPassword());
         } else {
             throw new UserNotFoundException("User with ID " + id + " not found.");
         }
@@ -113,7 +104,7 @@ public class UserService {
                 decryptedPassword.setId(encryptedPassword.getId());
                 decryptedPassword.setWebsite(encryptedPassword.getWebsite());
                 decryptedPassword.setUser(encryptedPassword.getUser());
-                String decryptedPasswordValue = encryptor.decrypt(encryptedPassword.getStoredPassword());
+                String decryptedPasswordValue = keyRetrievalService.decryptPassword(encryptedPassword.getStoredPassword());
                 decryptedPassword.setStoredPassword(decryptedPasswordValue);
                 decryptedPasswords.add(decryptedPassword);
             }
@@ -131,7 +122,8 @@ public class UserService {
         Optional<User> foundUser = repository.findByUsername(username);
         if (foundUser.isPresent()) {
             User user = foundUser.get();
-            String decryptedPassword = encryptor.decrypt(user.getPassword());
+            String ciphertext = user.getPassword();
+            String decryptedPassword = keyRetrievalService.decryptPassword(ciphertext);
             if (decryptedPassword.equals(password)) {
                 UserSession.login(user);
                 return user.getId();

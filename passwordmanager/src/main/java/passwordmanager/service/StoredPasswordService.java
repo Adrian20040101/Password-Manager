@@ -1,18 +1,15 @@
 package passwordmanager.service;
 
-import org.jasypt.util.text.BasicTextEncryptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import passwordmanager.custom_exceptions.PasswordNotFoundException;
 import passwordmanager.custom_exceptions.UserNotFoundException;
+import passwordmanager.key_retrieval.KeyRetrieval;
 import passwordmanager.model.StoredPassword;
 import passwordmanager.model.User;
 import passwordmanager.repository.StoredPasswordRepository;
 import passwordmanager.repository.UserRepository;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,24 +24,14 @@ public class StoredPasswordService {
     @Autowired
     private UserRepository userRepository;
 
-    private final BasicTextEncryptor encryptor;
+    private final KeyRetrieval keyRetrievalService;
 
-    public StoredPasswordService () {
-        String encryptionPassword = readKey();
-        encryptor = new BasicTextEncryptor();
-        encryptor.setPassword(encryptionPassword);
-    }
-
-    private String readKey () {
-        try {
-            return Files.readString(Path.of("passwordmanager/encryption_key.txt"));
-        } catch (IOException e) {
-            return "Error fetching key.";
-        }
+    public StoredPasswordService(KeyRetrieval keyRetrievalService) {
+        this.keyRetrievalService = keyRetrievalService;
     }
 
     public void addPassword (Integer id, String website, String password) {
-        String encryptedPassword = encryptor.encrypt(password);
+        String encryptedPassword = keyRetrievalService.encryptPassword(password);
         Optional<User> foundUser = userRepository.findById(id);
         if (foundUser.isPresent()) {
             User user = foundUser.get();
@@ -100,7 +87,7 @@ public class StoredPasswordService {
             User user = foundUser.get();
             if (foundPassword.isPresent()) {
                 StoredPassword storedPassword = foundPassword.get();
-                String encryptedPassword = encryptor.encrypt(newPassword);
+                String encryptedPassword = keyRetrievalService.encryptPassword(newPassword);
                 storedPassword.setStoredPassword(encryptedPassword);
                 passwordRepository.save(storedPassword);
             } else {
@@ -121,7 +108,7 @@ public class StoredPasswordService {
                 StoredPassword storedPassword = foundPassword.get();
                 String website = storedPassword.getWebsite();
                 String encryptedPassword = storedPassword.getStoredPassword();
-                String decryptedPassword = encryptor.decrypt(encryptedPassword);
+                String decryptedPassword = keyRetrievalService.decryptPassword(encryptedPassword);
                 Map<String, String> passwordInfo = new HashMap<>();
                 passwordInfo.put("website", website);
                 passwordInfo.put("password", decryptedPassword);

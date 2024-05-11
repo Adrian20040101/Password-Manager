@@ -10,9 +10,6 @@ export default function ResetPasswordPage() {
   const [email, setEmail] = useState('');
   const [backgroundImage, setBackgroundImage] = React.useState('');
 
-// implement a method in the back end to check if a user is existent in the db, and connect it to this part to be able to throw an error
-// if the username doesn't exist in the db
-
   const sendEmail = async (e) => {
     e.preventDefault();
 
@@ -37,11 +34,13 @@ export default function ResetPasswordPage() {
       })
       
       if (response.status === 200) {
-          setMessage('Password Reset Link sent! Check your email and follow the instructions.')
+          setMessage('Password Reset Link sent! Check your email and follow the instructions.');
+      } else if (response.status === 400) {
+          setError('You already have a pending reset request in your email. Wait 10 minutes before requesting another reset request.');
       } else if (response.status === 404) {
-        setError('User was not found in the database.');
+          setError('User was not found in the database.');
       } else if (response.status === 500) {
-          setError('Link could not be sent. Please try again.')
+          setError('Link could not be sent. Please try again.');
       } 
     } catch (error) {
         console.error('Error during reset process:', error);

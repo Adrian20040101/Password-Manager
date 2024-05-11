@@ -26,6 +26,8 @@ public class UserController {
         try {
             service.saveNewUser(user);
             return ResponseEntity.ok(HttpStatus.CREATED);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().build();
         } catch (NotComplexEnoughException e) {
             return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).build();
         } catch (Exception e) {
