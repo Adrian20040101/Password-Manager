@@ -8,7 +8,7 @@ import org.springframework.boot.autoconfigure.domain.EntityScan;
 @EntityScan (basePackages = "passwordmanager/model")
 public class PasswordManagerApplication {
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws Exception {
 		SpringApplication.run(PasswordManagerApplication.class, args);
 	}
 

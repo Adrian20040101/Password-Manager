@@ -49,7 +49,6 @@ export default function LoginPage() {
 
     try {
         const user = { username, password };
-        console.log(user);
         const response = await fetch('http://localhost:8080/user/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

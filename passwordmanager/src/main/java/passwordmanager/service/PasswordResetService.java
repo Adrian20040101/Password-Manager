@@ -1,10 +1,10 @@
 package passwordmanager.service;
 
-import jakarta.mail.MessagingException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import passwordmanager.custom_exceptions.PasswordNotFoundException;
 import passwordmanager.custom_exceptions.UserNotFoundException;
+import passwordmanager.email_service.GmailService;
 import passwordmanager.model.PasswordReset;
 import passwordmanager.model.User;
 import passwordmanager.repository.PasswordResetRepository;
@@ -23,10 +23,7 @@ public class PasswordResetService {
     @Autowired
     PasswordResetRepository passwordResetRepository;
 
-    @Autowired
-    EmailService emailService;
-
-    public void initiatePasswordReset (String username, String email) throws MessagingException {
+    public void initiatePasswordReset(String username, String email) throws Exception {
         Optional<User> foundUser = userRepository.findByUsername(username);
         if (foundUser.isPresent()) {
             User user = foundUser.get();
@@ -46,7 +43,7 @@ public class PasswordResetService {
             passwordResetRepository.save(reset);
 
             String resetLink = "http://localhost:3000/reset-password?token=" + token + '/' + user.getId();
-            emailService.sendPasswordResetEmail(email, resetLink);
+            new GmailService().sendEmail(email, "Password Reset Request", "Click the link below to reset your password:\n" + resetLink);
         } else {
             throw new UserNotFoundException("User not found.");
         }

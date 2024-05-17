@@ -1,6 +1,5 @@
 package passwordmanager.controller;
 
-import jakarta.mail.MessagingException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -38,7 +37,7 @@ public class PasswordResetController {
             return ResponseEntity.badRequest().build();
         } catch (UserNotFoundException e) {
             return ResponseEntity.notFound().build();
-        } catch (MessagingException e) {
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
