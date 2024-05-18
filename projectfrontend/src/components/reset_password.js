@@ -41,7 +41,7 @@ export default function ResetPassword() {
             formData.append('id', userId);
             formData.append('newPassword', newPassword);
 
-            const response = await fetch("http://localhost:8080/user/change", {
+            const response = await fetch("http://localhost:8080/user/reset", {
                 method: "POST",
                 body: formData
             })
@@ -50,6 +50,8 @@ export default function ResetPassword() {
                 setMessage('Password changed successfully.');
             } else if (response.status === 406) {
                 setError('New password does not meet minimum requirements.');
+            } else if (response.status === 403) {
+                setError('This session either expired or has been solved. Create a new session if you want to change your password.');
             } else if (response.status === 500) {
                 setError('Password could not be changed. Please try again.');
             }

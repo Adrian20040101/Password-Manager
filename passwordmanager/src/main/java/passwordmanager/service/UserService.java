@@ -71,11 +71,28 @@ public class UserService {
             User user = foundUser.get();
             user.setPassword(encryptedPassword);
             repository.save(user);
+        } else {
+            throw new UserNotFoundException("User with ID " + id + " not found.");
+        }
+    }
+
+    public void resetPassword (Integer id, String newPassword) {
+        if (!isComplex(newPassword)) {
+            throw new NotComplexEnoughException("Password does not meet required criteria.");
+        }
+        String encryptedPassword = keyRetrievalService.encryptPassword(newPassword);
+        Optional<User> foundUser = repository.findById(id);
+        if (foundUser.isPresent()) {
+            User user = foundUser.get();
             Optional<PasswordReset> foundResetRequest = passwordResetRepository.findByUserIdAndStatus(user.getId(), PasswordReset.Status.PENDING);
             if (foundResetRequest.isPresent()) {
                 PasswordReset resetRequest = foundResetRequest.get();
                 resetRequest.setStatus(PasswordReset.Status.SOLVED);
                 passwordResetRepository.save(resetRequest);
+                user.setPassword(encryptedPassword);
+                repository.save(user);
+            } else {
+                throw new AlreadyExpiredException("Session expired.");
             }
         } else {
             throw new UserNotFoundException("User with ID " + id + " not found.");

@@ -4,10 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import passwordmanager.custom_exceptions.IncorrectCredentialsException;
-import passwordmanager.custom_exceptions.NotComplexEnoughException;
-import passwordmanager.custom_exceptions.UserAlreadyLoggedInException;
-import passwordmanager.custom_exceptions.UserNotFoundException;
+import passwordmanager.custom_exceptions.*;
 import passwordmanager.model.User;
 import passwordmanager.service.UserService;
 
@@ -56,6 +53,22 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).build();
         } catch (UserNotFoundException e) {
             return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @PostMapping("/reset")
+    public ResponseEntity<HttpStatus> resetPassword(@RequestParam Integer id, @RequestParam String newPassword) {
+        try {
+            service.resetPassword(id, newPassword);
+            return ResponseEntity.ok(HttpStatus.OK);
+        } catch (NotComplexEnoughException e) {
+            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).build();
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (AlreadyExpiredException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }

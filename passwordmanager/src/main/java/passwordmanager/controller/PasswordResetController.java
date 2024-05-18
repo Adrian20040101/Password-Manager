@@ -14,12 +14,12 @@ import passwordmanager.service.PasswordResetService;
 public class PasswordResetController {
 
     @Autowired
-    PasswordResetService service;
+    private PasswordResetService service;
 
     @GetMapping("/checkValidity")
-    public ResponseEntity<?> checkPasswordResetValidity(@RequestParam("resetId") Integer resetId) {
+    public ResponseEntity<HttpStatus> checkPasswordResetValidity(@RequestParam Integer resetId) {
         try {
-            service.checkForValidity(resetId);
+            System.out.println(service.checkForValidity(resetId));
             return ResponseEntity.ok(HttpStatus.OK);
         } catch (PasswordNotFoundException e) {
             return ResponseEntity.notFound().build();

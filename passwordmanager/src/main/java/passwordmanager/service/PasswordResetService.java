@@ -1,6 +1,7 @@
 package passwordmanager.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import passwordmanager.custom_exceptions.PasswordNotFoundException;
 import passwordmanager.custom_exceptions.UserNotFoundException;
@@ -11,6 +12,7 @@ import passwordmanager.repository.PasswordResetRepository;
 import passwordmanager.repository.UserRepository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -49,7 +51,16 @@ public class PasswordResetService {
         }
     }
 
-    public void checkForValidity (Integer resetId) {
+    @Scheduled(fixedRate = 10000) // runs every 10 seconds
+    public void checkPendingResets() {
+        List<PasswordReset> pendingResets = passwordResetRepository.findByStatus(PasswordReset.Status.PENDING);
+        for (PasswordReset reset : pendingResets) {
+            checkForValidity(reset.getId());
+        }
+    }
+
+
+    public String checkForValidity (Integer resetId) {
         Optional<PasswordReset> foundResetEntry = passwordResetRepository.findById(resetId);
         if (foundResetEntry.isPresent()) {
             PasswordReset reset = foundResetEntry.get();
@@ -60,12 +71,14 @@ public class PasswordResetService {
                     reset.setStatus(PasswordReset.Status.EXPIRED);
                     passwordResetRepository.save(reset);
                 }
-            } else {
-                throw new IllegalStateException("Session has already been completed or has expired.");
             }
-        } else {
-            throw new PasswordNotFoundException("Password reset entry with ID " + resetId + " was not found.");
-        }
+//            } else {
+//                throw new IllegalStateException("Session has already been completed or has expired.");
+//            }
+                return reset.getStatus().toString();
+            } else {
+                throw new PasswordNotFoundException("Password reset entry with ID " + resetId + " was not found.");
+            }
     }
 
     public String generateToken () {
