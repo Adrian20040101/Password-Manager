@@ -25,7 +25,7 @@ public class PasswordResetService {
     @Autowired
     PasswordResetRepository passwordResetRepository;
 
-    public void initiatePasswordReset(String username, String email) throws Exception {
+    public void initiatePasswordReset (String username, String email) throws Exception {
         Optional<User> foundUser = userRepository.findByUsername(username);
         if (foundUser.isPresent()) {
             User user = foundUser.get();
